@@ -1680,8 +1680,8 @@ def main() -> None:
         NovelGame().play()
     except (KeyboardInterrupt, EOFError):
         print("\n\nゲームを終了しました。")
-        sys.exit(0)
-
+    except SystemExit:
+        print("\n\nゲームを終了しました。")
 
 if __name__ == "__main__":
     main()
