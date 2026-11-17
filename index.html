@@ -143,20 +143,11 @@ async function startGame() {
 
     statusText.textContent = "ゲームを読み込んでいます...";
 
+
     // Pythonの出力をHTMLに表示
     pyodide.setStdout({
       batched: (text) => writeOutput(text)
     });
-
-    pyodide.setStderr({
-      batched: (text) => writeOutput(text)
-    });
-
-
-// Pythonのinput()をブラウザの入力ダイアログに接続
-
-// Pythonのinput()をブラウザの入力ダイアログに接続
-let inputBuffer = "";
 
     pyodide.setStderr({
       batched: (text) => writeOutput(text)
@@ -185,8 +176,6 @@ let inputBuffer = "";
         return charCode;
       }
     });
-
-    // Pythonファイルを読み込む
     const response = await fetch("./game.py", { cache: "no-store" });
 
     if (!response.ok) {
