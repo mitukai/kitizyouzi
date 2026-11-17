@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>四月の騒音と五つの春</title>
+
+  <!-- Pyodide -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v314.0.8/full/pyodide.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 25px 15px;
+      background: #f7edf2;
+      color: #493b46;
+      font-family: sans-serif;
+    }
+
+    .game-container {
+      max-width: 850px;
+      margin: 30px auto;
+      padding: 25px;
+      background: #fffafd;
+      border: 1px solid #ead7e2;
+      border-radius: 16px;
+      box-shadow: 0 5px 20px #00000012;
+    }
+
+    h1 {
+      text-align: center;
+      color: #a65c83;
+      font-size: 25px;
+    }
+
+    .description {
+      text-align: center;
+      color: #887483;
+      line-height: 1.8;
+    }
+
+    #output {
+      background: #302936;
+      color: #f8edf5;
+      padding: 20px;
+      border-radius: 10px;
+      min-height: 350px;
+      max-height: 550px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      border: none;
+      border-radius: 9px;
+      background: #b56d91;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #bcb2b9;
+      cursor: wait;
+    }
+
+    #status {
+      text-align: center;
+      margin: 15px 0;
+      color: #98758a;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="game-container">
+
+  <h1>四月の騒音と五つの春</h1>
+
+  <p class="description">
+    吉祥寺ユウカと五人の少女が過ごす一年間。<br>
+    あなたの選択で物語の結末が変わります。
+  </p>
+
+  <div id="status">
+    ゲームを起動してください。
+  </div>
+
+  <pre id="output">ここにゲームの文章が表示されます。</pre>
+
+  <button id="startButton" onclick="startGame()">
+    ゲームスタート
+  </button>
+
+</div>
+
+<script>
+let pyodide = null;
+let isRunning = false;
+
+const output = document.getElementById("output");
+const statusText = document.getElementById("status");
+const startButton = document.getElementById("startButton");
+
+// 画面に文章を表示
+function writeOutput(text) {
+  output.textContent += text;
+  output.scrollTop = output.scrollHeight;
+}
+
+// ゲーム開始
+async function startGame() {
+
+  if (isRunning) return;
+
+  isRunning = true;
+  startButton.disabled = true;
+
+  output.textContent = "";
+  statusText.textContent = "Pythonを準備しています...";
+
+  try {
+
+    // Python実行環境を読み込む
+    if (!pyodide) {
+      pyodide = await loadPyodide();
+    }
+
+    statusText.textContent = "ゲームを読み込んでいます...";
+
+    // Pythonの出力をHTMLに表示
+    pyodide.setStdout({
+      batched: (text) => writeOutput(text)
+    });
+
+    pyodide.setStderr({
+      batched: (text) => writeOutput(text)
+    });
+
+    // Pythonのinput()をブラウザの入力ダイアログに接続
+    pyodide.setStdin({
+      stdin: () => {
+        const answer = window.prompt(
+          "空欄：続きを読む\n番号：選択肢を選ぶ\nq：ゲーム終了"
+        );
+        return answer;
+      }
+    });
+
+    // Pythonファイルを読み込む
+    const response = await fetch("./game.py");
+
+    if (!response.ok) {
+      throw new Error("game.pyを読み込めませんでした。");
+    }
+
+    const pythonCode = await response.text();
+
+    statusText.textContent = "ゲーム開始！";
+
+    // Pythonゲームを実行
+    await pyodide.runPythonAsync(pythonCode);
+
+    statusText.textContent = "ゲーム終了";
+
+  } catch (error) {
+
+    writeOutput("\n\nエラー:\n" + error);
+
+    statusText.textContent = "ゲームを終了しました。";
+
+  } finally {
+
+    isRunning = false;
+    startButton.disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>
