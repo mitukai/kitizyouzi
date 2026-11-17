@@ -158,42 +158,36 @@ async function startGame() {
 // Pythonのinput()をブラウザの入力ダイアログに接続
 let inputBuffer = "";
 
-pyodide.setStdin({
-  stdin: () => {
-    // 入力待ちの文字がなくなったら、次の入力を求める
-    if (inputBuffer.length === 0) {
-      const answer = window.prompt(
-        "【ゲームへの入力】\n\n" +
-        "場面を進めるとき：何も入力せずOK\n" +
-        "選択肢を選ぶとき：番号を入力してOK\n" +
-        "ゲームを終了するとき：qを入力\n\n" +
-        "※選択肢が表示されているときは数字を入力してください。"
-      );
+    pyodide.setStderr({
+      batched: (text) => writeOutput(text)
+    });
 
-      // キャンセルされた場合は q として扱う
-      inputBuffer = (answer === null ? "q" : answer.trim()) + "\n";
-    }
+    // Pythonのinput()をブラウザの入力ダイアログに接続
+    let inputBuffer = "";
 
-    // 1文字ずつ文字コードでPythonに渡す
-    const charCode = inputBuffer.charCodeAt(0);
-    inputBuffer = inputBuffer.slice(1);
+    pyodide.setStdin({
+      stdin: () => {
+        if (inputBuffer.length === 0) {
+          const answer = window.prompt(
+            "【ゲームへの入力】\n\n" +
+            "場面を進めるとき：何も入力せずOK\n" +
+            "選択肢を選ぶとき：番号を入力してOK\n" +
+            "ゲームを終了するとき：qを入力\n\n" +
+            "※選択肢が表示されているときは数字を入力してください。"
+          );
 
-    return charCode;
-  }
-});
+          inputBuffer = (answer === null ? "q" : answer.trim()) + "\n";
+        }
 
-    // キャンセルされた場合は終了扱い
-    if (answer === null) {
-      return "q";
-    }
+        const charCode = inputBuffer.charCodeAt(0);
+        inputBuffer = inputBuffer.slice(1);
 
-    return answer.trim();
-  }
-});
-
+        return charCode;
+      }
+    });
 
     // Pythonファイルを読み込む
-    const response = await fetch("./game.py");
+    const response = await fetch("./game.py", { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error("game.pyを読み込めませんでした。");
