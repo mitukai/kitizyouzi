@@ -152,15 +152,27 @@ async function startGame() {
       batched: (text) => writeOutput(text)
     });
 
-    // Pythonのinput()をブラウザの入力ダイアログに接続
-    pyodide.setStdin({
-      stdin: () => {
-        const answer = window.prompt(
-          "空欄：続きを読む\n番号：選択肢を選ぶ\nq：ゲーム終了"
-        );
-        return answer;
-      }
-    });
+
+// Pythonのinput()をブラウザの入力ダイアログに接続
+pyodide.setStdin({
+  stdin: () => {
+    const answer = window.prompt(
+      "【ゲームへの入力】\n\n" +
+      "場面を進めるとき：何も入力せずOK\n" +
+      "選択肢を選ぶとき：番号を入力してOK\n" +
+      "ゲームを終了するとき：qを入力\n\n" +
+      "※選択肢が表示されているときは数字を入力してください。"
+    );
+
+    // キャンセルされた場合は終了扱い
+    if (answer === null) {
+      return "q";
+    }
+
+    return answer.trim();
+  }
+});
+
 
     // Pythonファイルを読み込む
     const response = await fetch("./game.py");
